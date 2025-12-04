@@ -60,7 +60,7 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   const createdUser = await User.findById(user._id).select(
-    "-passsword -refreshToken -emailVerificationToken -emailVerificationExpiry"
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
   );
 
   if (!createdUser) {
@@ -97,7 +97,7 @@ const login = asyncHandler(async (req, res) => {
     user._id
   );
   const loggedInUser = await User.findById(user._id).select(
-    "-passsword -refreshToken -emailVerificationToken -emailVerificationExpiry"
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
   );
 
   const options = {
@@ -121,4 +121,27 @@ const login = asyncHandler(async (req, res) => {
     );
 });
 
-export { registerUser, login };
+const logoutUser = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        refreshToken: null,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, null, "user logged out successfully"));
+});
+
+export { registerUser, login, logoutUser };
