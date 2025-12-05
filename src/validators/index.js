@@ -27,4 +27,32 @@ const userLoginValidator = () => {
   ];
 };
 
-export { userRegisterValidator, userLoginValidator };
+const userChangeCurrentPasswordValidator = () => {
+  return [
+    body("oldPassword").notEmpty().withMessage("Old password cannot be empty"),
+    body("newPassword").notEmpty().withMessage("New password cannot be empty"),
+  ];
+};
+
+const userForgotPasswordValidator = () => {
+  return [
+    body("email")
+      .trim()
+      .notEmpty()
+      .withMessage("Email is required and cannot be empty")
+      .isEmail()
+      .withMessage("Email is invalid"),
+  ];
+};
+const userResetForgotPasswordValidator = () => {
+  return [
+    body("newPassword").notEmpty().withMessage("New password cannot be empty"),
+  ];
+};
+export {
+  userRegisterValidator,
+  userLoginValidator,
+  userChangeCurrentPasswordValidator,
+  userForgotPasswordValidator,
+  userResetForgotPasswordValidator,
+};
