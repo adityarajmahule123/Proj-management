@@ -3,8 +3,7 @@ import { ApiResponse } from "../utils/api-response.js";
 import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { emailVerificationMailGenContent, sendEmail } from "../utils/mail.js";
-import { param } from "express-validator";
-
+import jwt from "jsonwebtoken";
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
     const user = await User.findById(userId);
@@ -212,7 +211,48 @@ const resendEmailverification = asyncHandler(async (req, res) => {
   }
   return res.status(200).json(200, {}, "Mail has been sent to your Email");
 });
-//const getCurrentUser = asyncHandler(async (req, res) => {});
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
+  if (!incomingRefreshToken) {
+    throw new ApiError("Refresh token is required", 401);
+  }
+  try {
+    const decodedToken = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+    const user = await User.findById(decodedToken?._id);
+    if (!user) {
+      throw new ApiError("Invalid refresh token", 401);
+    }
+
+    if (incomingRefreshToken !== user?.refreshToken) {
+      throw new ApiError("Refresh token does not match", 401);
+    }
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+    const { accessToken, refreshToken: newRefreshToken } =
+      await generateAccessAndRefreshTokens(user._id);
+    user.refreshToken = newRefreshToken;
+    await user.save({ validateBeforeSave: false });
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", newRefreshToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          { accessToken, refreshToken: newRefreshToken },
+          "Access token refreshed successfully"
+        )
+      );
+  } catch (error) {
+    throw new ApiError("Refresh token is  invalid", 401);
+  }
+});
 
 export {
   registerUser,
@@ -221,4 +261,5 @@ export {
   getCurrentUser,
   verifyEmail,
   resendEmailverification,
+  refreshAccessToken,
 };
