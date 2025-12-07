@@ -3,12 +3,15 @@ import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import jwt from "jsonwebtoken";
 export const verifyJWT = asyncHandler(async (req, res, next) => {
-  const authHeader = req.header("Authorization");
+  const authHeader = req.header("Authorization") || req.headers.authorization;
+  const bearerMatch = authHeader && authHeader.match(/^Bearer\s+(.+)$/i);
   const token =
-    req.cookies?.accessToken ||
-    (authHeader && authHeader.startsWith("Bearer ")
-      ? authHeader.split(" ")[1]
-      : null);
+    req.cookies?.accessToken || (bearerMatch ? bearerMatch[1] : null);
+  if (process.env.NODE_ENV !== "production") {
+    // Helpful debug when testing locally (Postman)
+    console.debug("verifyJWT: authHeader=", authHeader);
+    console.debug("verifyJWT: token present=", !!token);
+  }
   if (!token) {
     return next(new ApiError("Unauthorized", 401));
   }
@@ -23,6 +26,6 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    throw new ApiError("Invalid access token", 401);
+    return next(new ApiError("Invalid access token", 401));
   }
 });

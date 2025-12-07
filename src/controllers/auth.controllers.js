@@ -53,6 +53,9 @@ const registerUser = asyncHandler(async (req, res) => {
   user.emailVerificationExpiry = tokenExpiry;
   await user.save({ validateBeforeSave: false });
 
+  // Debug: Print token to console
+  console.log("📧 Verification Token:", unHashedToken);
+
   await sendEmail({
     email: user?.email,
     subject: "Please verify your email",
@@ -60,7 +63,7 @@ const registerUser = asyncHandler(async (req, res) => {
       user.username,
       `${req.protocol}://${req.get(
         "host"
-      )}/api/v1/users/verify-email${unHashedToken}`
+      )}/api/v1/auth/verify-email/${unHashedToken}`
     ),
   });
 
@@ -211,7 +214,7 @@ const resendEmailverification = asyncHandler(async (req, res) => {
       user.username,
       `${req.protocol}://${req.get(
         "host"
-      )}/api/v1/users/verify-email${unHashedToken}`
+      )}/api/v1/auth/verify-email/${unHashedToken}`
     ),
   });
   return res
@@ -273,6 +276,9 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
   user.forgotPasswordToken = hashedToken;
   user.forgotPasswordExpiry = tokenExpiry;
   await user.save({ validateBeforeSave: false });
+
+  // Debug: Print reset token to console
+  console.log("🔑 Reset Password Token:", unHashedToken);
 
   await sendEmail({
     email: user?.email,

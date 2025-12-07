@@ -14,5 +14,11 @@ export const validate = (req, res, next) => {
         [err.path]: err.msg,
       })
   );
-  throw new ApiError(422, "Received data is not valid", extractedErrors);
+  // Log errors for quick debugging (non-sensitive)
+  if (process.env.NODE_ENV !== "production") {
+    console.debug("Validation errors:", extractedErrors);
+  }
+
+  // Forward validation error to the global error handler
+  return next(new ApiError(422, "Received data is not valid", extractedErrors));
 };
