@@ -31,4 +31,22 @@ app.use("/api/v1/auth", authRouter);
 app.get("/", (req, res) => {
   res.send("Welcome to basecampy");
 });
+// Global error handler - returns consistent JSON for ApiError and other errors
+import { ApiError } from "./utils/api-error.js";
+import { ApiResponse } from "./utils/api-response.js";
+
+app.use((err, req, res, next) => {
+  if (process.env.NODE_ENV !== "production") {
+    console.error(err);
+  }
+
+  const statusCode = err?.statusCode || 500;
+  const message = err?.message || "Internal Server Error";
+  const errors = err?.errors || null;
+
+  return res
+    .status(statusCode)
+    .json(new ApiResponse(statusCode, errors, message));
+});
+
 export default app;
